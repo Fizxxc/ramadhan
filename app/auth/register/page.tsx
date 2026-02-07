@@ -4,12 +4,10 @@ import React from "react";
 import { supabase } from "@/lib/supabase/client";
 import { registerSchema } from "@/lib/zod/auth";
 import { z } from "zod";
-import { useRouter } from "next/navigation";
 
 type Form = z.infer<typeof registerSchema>;
 
 export default function RegisterPage() {
-  const router = useRouter();
   const [form, setForm] = React.useState<Form>({ email: "", password: "", confirm: "" });
   const [error, setError] = React.useState<string>("");
   const [info, setInfo] = React.useState<string>("");
@@ -21,21 +19,17 @@ export default function RegisterPage() {
     setInfo("");
 
     const parsed = registerSchema.safeParse(form);
-    if (!parsed.success) {
-      setError(parsed.error.issues[0]?.message ?? "Input tidak valid");
-      return;
-    }
+    if (!parsed.success) return setError(parsed.error.issues[0]?.message ?? "Input tidak valid");
 
     setLoading(true);
     const { error: err } = await supabase.auth.signUp({
       email: parsed.data.email,
       password: parsed.data.password,
-      options: { emailRedirectTo: `${window.location.origin}/app/home` },
+      options: { emailRedirectTo: `${window.location.origin}/auth/login` },
     });
     setLoading(false);
 
     if (err) return setError(err.message);
-
     setInfo("Akun dibuat. Silakan cek email untuk verifikasi, lalu masuk.");
   };
 
@@ -45,17 +39,8 @@ export default function RegisterPage() {
         <h1 className="text-xl font-semibold text-text">Daftar</h1>
         <p className="mt-1 text-sm text-muted">Mulai perjalanan Ramadhan Anda.</p>
 
-        {error ? (
-          <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-            {error}
-          </div>
-        ) : null}
-
-        {info ? (
-          <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
-            {info}
-          </div>
-        ) : null}
+        {error ? <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div> : null}
+        {info ? <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">{info}</div> : null}
 
         <form onSubmit={onSubmit} className="mt-6 space-y-4">
           <label className="block">
@@ -97,25 +82,14 @@ export default function RegisterPage() {
           <button
             disabled={loading}
             className="w-full rounded-2xl px-4 py-3 text-white font-semibold shadow-[0_10px_30px_rgba(16,185,129,0.25)] disabled:opacity-60 active:scale-[0.98] transition"
-            style={{
-              background: "linear-gradient(135deg, rgb(16 185 129), rgb(59 130 246))",
-            }}
+            style={{ background: "linear-gradient(135deg, rgb(16 185 129), rgb(59 130 246))" }}
           >
             {loading ? "Membuat akun..." : "Buat Akun"}
           </button>
 
-          <div className="flex justify-between text-sm">
-            <a className="text-muted underline underline-offset-4" href="/auth/login">
-              Sudah punya akun? Masuk
-            </a>
-            <button
-              type="button"
-              className="text-text font-medium underline underline-offset-4"
-              onClick={() => router.push("/")}
-            >
-              Kembali
-            </button>
-          </div>
+          <a className="block text-center text-sm text-muted underline underline-offset-4" href="/auth/login">
+            Sudah punya akun? Masuk
+          </a>
 
           <div className="mt-2 rounded-2xl border border-border bg-surface px-4 py-3 text-xs text-muted">
             Kami akan mengirim email verifikasi. Setelah verifikasi, silakan login.

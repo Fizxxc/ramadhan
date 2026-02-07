@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Ramadhan Companion",
-  description: "Teman ibadah Ramadhan Anda (mobile-only)."
+  description: "Teman ibadah Ramadhan (mobile-only)."
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

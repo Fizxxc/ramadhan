@@ -31,20 +31,16 @@ export default function OnboardingPage() {
       return setError("Sesi tidak ditemukan. Silakan login ulang.");
     }
 
-    // upsert profile
     const { error: err } = await supabase.from("profiles").upsert({
       id: uid,
       name: name.trim(),
-      preferences: {
-        target_tilawah: tilawahTarget,
-        target_hafalan: hafalanTarget,
-        notif_enabled: notif,
-      },
+      preferences: { target_tilawah: tilawahTarget, target_hafalan: hafalanTarget, notif_enabled: notif },
     });
+
+    await supabase.from("quran_progress").upsert({ user_id: uid }, { onConflict: "user_id" });
 
     setLoading(false);
     if (err) return setError(err.message);
-
     router.replace("/app/home");
   };
 
@@ -56,11 +52,7 @@ export default function OnboardingPage() {
           <div className="text-xs text-muted">Langkah {step}/3</div>
         </div>
 
-        {error ? (
-          <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-            {error}
-          </div>
-        ) : null}
+        {error ? <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div> : null}
 
         {step === 1 ? (
           <section className="mt-6">
@@ -94,7 +86,7 @@ export default function OnboardingPage() {
 
             <div className="mt-5 rounded-3xl border border-border bg-white p-4">
               <div className="text-sm font-semibold text-text">Target tilawah</div>
-              <p className="mt-1 text-xs text-muted">Dalam halaman/juz (angka sederhana untuk MVP).</p>
+              <p className="mt-1 text-xs text-muted">Halaman/Juz (angka sederhana untuk MVP).</p>
               <input
                 type="number"
                 min={1}
@@ -117,17 +109,11 @@ export default function OnboardingPage() {
             </div>
 
             <div className="mt-6 grid grid-cols-2 gap-2">
-              <button
-                onClick={back}
-                className="rounded-2xl border border-border bg-white px-4 py-3 text-sm font-semibold text-text active:scale-[0.98] transition"
-              >
+              <button onClick={back} className="rounded-2xl border border-border bg-white px-4 py-3 text-sm font-semibold text-text active:scale-[0.98] transition">
                 Kembali
               </button>
-              <button
-                onClick={next}
-                className="rounded-2xl px-4 py-3 text-sm font-semibold text-white active:scale-[0.98] transition"
-                style={{ background: "linear-gradient(135deg, rgb(16 185 129), rgb(59 130 246))" }}
-              >
+              <button onClick={next} className="rounded-2xl px-4 py-3 text-sm font-semibold text-white active:scale-[0.98] transition"
+                style={{ background: "linear-gradient(135deg, rgb(16 185 129), rgb(59 130 246))" }}>
                 Lanjut
               </button>
             </div>
@@ -145,35 +131,19 @@ export default function OnboardingPage() {
                   <div className="text-sm font-semibold text-text">Notifikasi</div>
                   <div className="text-xs text-muted">Pengingat harian (simbolik untuk MVP).</div>
                 </div>
-                <button
-                  onClick={() => setNotif((s) => !s)}
-                  className="h-10 w-16 rounded-full border border-border bg-white px-1 active:scale-[0.98] transition"
-                  aria-label="Toggle notifikasi"
-                >
-                  <div
-                    className="h-8 w-8 rounded-full transition"
-                    style={{
-                      transform: notif ? "translateX(24px)" : "translateX(0px)",
-                      background: notif ? "rgb(var(--green))" : "rgb(var(--border))",
-                    }}
-                  />
+                <button onClick={() => setNotif((s) => !s)} className="h-10 w-16 rounded-full border border-border bg-white px-1 active:scale-[0.98] transition" aria-label="Toggle notifikasi">
+                  <div className="h-8 w-8 rounded-full transition"
+                    style={{ transform: notif ? "translateX(24px)" : "translateX(0px)", background: notif ? "rgb(var(--green))" : "rgb(var(--border))" }} />
                 </button>
               </div>
             </div>
 
-            <button
-              onClick={finish}
-              disabled={loading}
-              className="mt-6 w-full rounded-2xl px-4 py-3 text-white font-semibold disabled:opacity-60 active:scale-[0.98] transition"
-              style={{ background: "linear-gradient(135deg, rgb(16 185 129), rgb(59 130 246))" }}
-            >
+            <button onClick={finish} disabled={loading} className="mt-6 w-full rounded-2xl px-4 py-3 text-white font-semibold disabled:opacity-60 active:scale-[0.98] transition"
+              style={{ background: "linear-gradient(135deg, rgb(16 185 129), rgb(59 130 246))" }}>
               {loading ? "Menyimpan..." : "Mulai"}
             </button>
 
-            <button
-              onClick={back}
-              className="mt-3 w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm font-semibold text-text active:scale-[0.98] transition"
-            >
+            <button onClick={back} className="mt-3 w-full rounded-2xl border border-border bg-white px-4 py-3 text-sm font-semibold text-text active:scale-[0.98] transition">
               Kembali
             </button>
           </section>

@@ -4,7 +4,7 @@ import { createServerClient } from "@supabase/ssr";
 type CookieToSet = {
   name: string;
   value: string;
-  options?: any; // cukup untuk lolos strict; bisa dipertegas nanti
+  options?: Parameters<ReturnType<typeof cookies>["set"]>[2];
 };
 
 export function createSupabaseServerClient() {
@@ -19,9 +19,7 @@ export function createSupabaseServerClient() {
           return cookieStore.getAll();
         },
         setAll(cookiesToSet: CookieToSet[]) {
-          cookiesToSet.forEach(({ name, value, options }) => {
-            cookieStore.set(name, value, options);
-          });
+          cookiesToSet.forEach(({ name, value, options }) => cookieStore.set(name, value, options));
         },
       },
     }

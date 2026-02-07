@@ -2,21 +2,14 @@
 
 import React from "react";
 
-type Props = {
-  open: boolean;
-  title?: string;
-  onClose: () => void;
-  children: React.ReactNode;
-};
+type Props = { open: boolean; title?: string; onClose: () => void; children: React.ReactNode };
 
 export function BottomSheet({ open, title, onClose, children }: Props) {
   const ref = React.useRef<HTMLDivElement | null>(null);
 
   React.useEffect(() => {
     if (!open) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
   }, [open, onClose]);
@@ -47,7 +40,6 @@ export function BottomSheet({ open, title, onClose, children }: Props) {
       if (!dragging) return;
       dragging = false;
       el.style.transition = "transform 220ms cubic-bezier(0.2,0.8,0.2,1)";
-
       if (currentY > 120) onClose();
       else el.style.transform = "translateY(0px)";
       currentY = 0;
@@ -68,21 +60,14 @@ export function BottomSheet({ open, title, onClose, children }: Props) {
 
   return (
     <div className="fixed inset-0 z-50">
-      <button
-        aria-label="Tutup"
-        onClick={onClose}
-        className="absolute inset-0 bg-slate-900/30 backdrop-blur-md transition"
-      />
+      <button aria-label="Tutup" onClick={onClose} className="absolute inset-0 bg-slate-900/30 backdrop-blur-md transition" />
       <div className="absolute inset-x-0 bottom-0 mx-auto w-full max-w-[430px]">
         <div
           ref={ref}
           role="dialog"
           aria-modal="true"
           className="rounded-t-[28px] border border-border bg-white shadow-[0_-20px_60px_rgba(15,23,42,0.18)]"
-          style={{
-            transform: "translateY(0px)",
-            transition: "transform 220ms cubic-bezier(0.2,0.8,0.2,1)",
-          }}
+          style={{ transform: "translateY(0px)", transition: "transform 220ms cubic-bezier(0.2,0.8,0.2,1)" }}
         >
           <div className="px-5 pt-3 pb-2">
             <div className="mx-auto h-1.5 w-12 rounded-full bg-slate-200" aria-hidden />

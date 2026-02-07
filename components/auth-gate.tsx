@@ -14,11 +14,8 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
 
     const init = async () => {
       const { data } = await supabase.auth.getSession();
-      if (!data.session && mounted) {
-        router.replace("/auth/login");
-      } else if (mounted) {
-        setReady(true);
-      }
+      if (!data.session && mounted) router.replace("/auth/login");
+      else if (mounted) setReady(true);
     };
 
     init();

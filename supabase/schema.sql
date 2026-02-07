@@ -1,4 +1,4 @@
--- Ramadhan Companion: Schema + Indexes + RLS Policies
+-- Ramadhan Companion - Schema + RLS (minimal wajib)
 -- Jalankan di Supabase SQL Editor
 
 create extension if not exists pgcrypto;
@@ -6,7 +6,7 @@ create extension if not exists pgcrypto;
 -- 1) profiles
 create table if not exists public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
-  name text not null,
+  name text,
   avatar_url text,
   bio text,
   role text not null default 'user' check (role in ('user','admin')),
@@ -14,25 +14,22 @@ create table if not exists public.profiles (
   created_at timestamptz not null default now()
 );
 
-create index if not exists profiles_role_idx on public.profiles(role);
-
 -- 2) quran_progress
 create table if not exists public.quran_progress (
   id uuid primary key default gen_random_uuid(),
-  user_id uuid not null references public.profiles(id) on delete cascade,
+  user_id uuid not null references auth.users(id) on delete cascade,
   last_surah int,
   last_ayah int,
   last_juz int,
   bookmarks jsonb not null default '[]'::jsonb,
-  updated_at timestamptz not null default now()
+  updated_at timestamptz not null default now(),
+  unique(user_id)
 );
-
-create unique index if not exists quran_progress_user_unique on public.quran_progress(user_id);
 
 -- 3) tilawah_logs
 create table if not exists public.tilawah_logs (
   id uuid primary key default gen_random_uuid(),
-  user_id uuid not null references public.profiles(id) on delete cascade,
+  user_id uuid not null references auth.users(id) on delete cascade,
   date date not null,
   surah int not null,
   ayah_from int not null,
@@ -42,26 +39,22 @@ create table if not exists public.tilawah_logs (
   created_at timestamptz not null default now()
 );
 
-create index if not exists tilawah_logs_user_date_idx on public.tilawah_logs(user_id, date);
-create index if not exists tilawah_logs_date_idx on public.tilawah_logs(date);
-
 -- 4) memorization_plans
 create table if not exists public.memorization_plans (
   id uuid primary key default gen_random_uuid(),
-  user_id uuid not null references public.profiles(id) on delete cascade,
+  user_id uuid not null references auth.users(id) on delete cascade,
   title text not null,
-  target_per_day int not null,
-  method text not null default 'murajaah' check (method in ('murajaah','setoran','campuran')),
-  start_date date not null,
-  active boolean not null default true
+  target_per_day int not null default 1,
+  method text not null default 'murajaah',
+  start_date date not null default (now()::date),
+  active boolean not null default true,
+  created_at timestamptz not null default now()
 );
-
-create index if not exists memorization_plans_user_active_idx on public.memorization_plans(user_id, active);
 
 -- 5) memorization_logs
 create table if not exists public.memorization_logs (
   id uuid primary key default gen_random_uuid(),
-  user_id uuid not null references public.profiles(id) on delete cascade,
+  user_id uuid not null references auth.users(id) on delete cascade,
   date date not null,
   surah int not null,
   ayah_from int not null,
@@ -71,21 +64,17 @@ create table if not exists public.memorization_logs (
   created_at timestamptz not null default now()
 );
 
-create index if not exists memorization_logs_user_date_idx on public.memorization_logs(user_id, date);
-create index if not exists memorization_logs_date_idx on public.memorization_logs(date);
-
 -- 6) worship_checklists
 create table if not exists public.worship_checklists (
   id uuid primary key default gen_random_uuid(),
-  user_id uuid not null references public.profiles(id) on delete cascade,
+  user_id uuid not null references auth.users(id) on delete cascade,
   date date not null,
   items jsonb not null default '{}'::jsonb,
   reflection text,
-  mood int check (mood between 1 and 5),
-  created_at timestamptz not null default now()
+  mood int,
+  created_at timestamptz not null default now(),
+  unique(user_id, date)
 );
-
-create unique index if not exists worship_checklists_user_date_unique on public.worship_checklists(user_id, date);
 
 -- 7) admin_content
 create table if not exists public.admin_content (
@@ -93,17 +82,15 @@ create table if not exists public.admin_content (
   type text not null check (type in ('tips','challenge','announcement')),
   title text not null,
   body text not null,
-  publish_date date not null,
-  active boolean not null default true
+  publish_date date,
+  active boolean not null default true,
+  created_at timestamptz not null default now()
 );
-
-create index if not exists admin_content_type_date_idx on public.admin_content(type, publish_date);
-create index if not exists admin_content_active_idx on public.admin_content(active);
 
 -- 8) audit_logs
 create table if not exists public.audit_logs (
   id uuid primary key default gen_random_uuid(),
-  actor_user_id uuid references public.profiles(id) on delete set null,
+  actor_user_id uuid references auth.users(id) on delete set null,
   action text not null,
   entity text not null,
   entity_id uuid,
@@ -111,16 +98,19 @@ create table if not exists public.audit_logs (
   created_at timestamptz not null default now()
 );
 
-create index if not exists audit_logs_actor_idx on public.audit_logs(actor_user_id, created_at desc);
-create index if not exists audit_logs_entity_idx on public.audit_logs(entity, created_at desc);
+-- Indexes
+create index if not exists idx_tilawah_user_date on public.tilawah_logs(user_id, date);
+create index if not exists idx_hafalan_user_date on public.memorization_logs(user_id, date);
+create index if not exists idx_tracker_user_date on public.worship_checklists(user_id, date);
+create index if not exists idx_audit_actor_time on public.audit_logs(actor_user_id, created_at desc);
+create index if not exists idx_admin_content_active_date on public.admin_content(active, publish_date);
 
--- Helper: admin check
-create or replace function public.is_admin(uid uuid)
-returns boolean
+-- Helper function to check admin role
+create or replace function public.is_admin() returns boolean
 language sql stable as $$
-  select exists (
+  select exists(
     select 1 from public.profiles p
-    where p.id = uid and p.role = 'admin'
+    where p.id = auth.uid() and p.role = 'admin'
   );
 $$;
 
@@ -134,73 +124,130 @@ alter table public.worship_checklists enable row level security;
 alter table public.admin_content enable row level security;
 alter table public.audit_logs enable row level security;
 
--- PROFILES policies
-create policy "profiles_select_own_or_admin"
-on public.profiles for select
-using (id = auth.uid() or public.is_admin(auth.uid()));
+-- profiles policies
+drop policy if exists "profiles_select_own_or_admin" on public.profiles;
+create policy "profiles_select_own_or_admin" on public.profiles
+for select using (auth.uid() = id or public.is_admin());
 
-create policy "profiles_update_own"
-on public.profiles for update
-using (id = auth.uid())
-with check (id = auth.uid());
+drop policy if exists "profiles_insert_own" on public.profiles;
+create policy "profiles_insert_own" on public.profiles
+for insert with check (auth.uid() = id);
 
-create policy "profiles_insert_self"
-on public.profiles for insert
-with check (id = auth.uid());
+drop policy if exists "profiles_update_own" on public.profiles;
+create policy "profiles_update_own" on public.profiles
+for update using (auth.uid() = id) with check (auth.uid() = id);
 
--- QURAN_PROGRESS policies
-create policy "quran_progress_crud_own"
-on public.quran_progress for all
-using (user_id = auth.uid() or public.is_admin(auth.uid()))
-with check (user_id = auth.uid() or public.is_admin(auth.uid()));
+-- quran_progress policies
+drop policy if exists "quran_progress_select_own_or_admin" on public.quran_progress;
+create policy "quran_progress_select_own_or_admin" on public.quran_progress
+for select using (auth.uid() = user_id or public.is_admin());
 
--- TILAWAH_LOGS policies
-create policy "tilawah_logs_crud_own"
-on public.tilawah_logs for all
-using (user_id = auth.uid() or public.is_admin(auth.uid()))
-with check (user_id = auth.uid() or public.is_admin(auth.uid()));
+drop policy if exists "quran_progress_insert_own" on public.quran_progress;
+create policy "quran_progress_insert_own" on public.quran_progress
+for insert with check (auth.uid() = user_id);
 
--- MEMORIZATION_PLANS policies
-create policy "memorization_plans_crud_own"
-on public.memorization_plans for all
-using (user_id = auth.uid() or public.is_admin(auth.uid()))
-with check (user_id = auth.uid() or public.is_admin(auth.uid()));
+drop policy if exists "quran_progress_update_own" on public.quran_progress;
+create policy "quran_progress_update_own" on public.quran_progress
+for update using (auth.uid() = user_id) with check (auth.uid() = user_id);
 
--- MEMORIZATION_LOGS policies
-create policy "memorization_logs_crud_own"
-on public.memorization_logs for all
-using (user_id = auth.uid() or public.is_admin(auth.uid()))
-with check (user_id = auth.uid() or public.is_admin(auth.uid()));
+-- tilawah_logs policies
+drop policy if exists "tilawah_select_own_or_admin" on public.tilawah_logs;
+create policy "tilawah_select_own_or_admin" on public.tilawah_logs
+for select using (auth.uid() = user_id or public.is_admin());
 
--- WORSHIP_CHECKLISTS policies
-create policy "worship_checklists_crud_own"
-on public.worship_checklists for all
-using (user_id = auth.uid() or public.is_admin(auth.uid()))
-with check (user_id = auth.uid() or public.is_admin(auth.uid()));
+drop policy if exists "tilawah_insert_own" on public.tilawah_logs;
+create policy "tilawah_insert_own" on public.tilawah_logs
+for insert with check (auth.uid() = user_id);
 
--- ADMIN_CONTENT policies
-create policy "admin_content_read_active_for_users"
-on public.admin_content for select
-using (active = true);
+drop policy if exists "tilawah_update_own" on public.tilawah_logs;
+create policy "tilawah_update_own" on public.tilawah_logs
+for update using (auth.uid() = user_id) with check (auth.uid() = user_id);
 
-create policy "admin_content_admin_crud"
-on public.admin_content for all
-using (public.is_admin(auth.uid()))
-with check (public.is_admin(auth.uid()));
+drop policy if exists "tilawah_delete_own" on public.tilawah_logs;
+create policy "tilawah_delete_own" on public.tilawah_logs
+for delete using (auth.uid() = user_id);
 
--- AUDIT_LOGS policies
-create policy "audit_logs_read_own_or_admin"
-on public.audit_logs for select
-using (actor_user_id = auth.uid() or public.is_admin(auth.uid()));
+-- memorization_plans policies
+drop policy if exists "plans_select_own_or_admin" on public.memorization_plans;
+create policy "plans_select_own_or_admin" on public.memorization_plans
+for select using (auth.uid() = user_id or public.is_admin());
 
-create policy "audit_logs_insert_own"
-on public.audit_logs for insert
-with check (actor_user_id = auth.uid());
+drop policy if exists "plans_insert_own" on public.memorization_plans;
+create policy "plans_insert_own" on public.memorization_plans
+for insert with check (auth.uid() = user_id);
 
--- Seed minimal admin_content
+drop policy if exists "plans_update_own" on public.memorization_plans;
+create policy "plans_update_own" on public.memorization_plans
+for update using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+drop policy if exists "plans_delete_own" on public.memorization_plans;
+create policy "plans_delete_own" on public.memorization_plans
+for delete using (auth.uid() = user_id);
+
+-- memorization_logs policies
+drop policy if exists "hafalan_select_own_or_admin" on public.memorization_logs;
+create policy "hafalan_select_own_or_admin" on public.memorization_logs
+for select using (auth.uid() = user_id or public.is_admin());
+
+drop policy if exists "hafalan_insert_own" on public.memorization_logs;
+create policy "hafalan_insert_own" on public.memorization_logs
+for insert with check (auth.uid() = user_id);
+
+drop policy if exists "hafalan_update_own" on public.memorization_logs;
+create policy "hafalan_update_own" on public.memorization_logs
+for update using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+drop policy if exists "hafalan_delete_own" on public.memorization_logs;
+create policy "hafalan_delete_own" on public.memorization_logs
+for delete using (auth.uid() = user_id);
+
+-- worship_checklists policies
+drop policy if exists "tracker_select_own_or_admin" on public.worship_checklists;
+create policy "tracker_select_own_or_admin" on public.worship_checklists
+for select using (auth.uid() = user_id or public.is_admin());
+
+drop policy if exists "tracker_insert_own" on public.worship_checklists;
+create policy "tracker_insert_own" on public.worship_checklists
+for insert with check (auth.uid() = user_id);
+
+drop policy if exists "tracker_update_own" on public.worship_checklists;
+create policy "tracker_update_own" on public.worship_checklists
+for update using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+drop policy if exists "tracker_delete_own" on public.worship_checklists;
+create policy "tracker_delete_own" on public.worship_checklists
+for delete using (auth.uid() = user_id);
+
+-- admin_content policies (read all authenticated users; write admin only)
+drop policy if exists "admin_content_select_all" on public.admin_content;
+create policy "admin_content_select_all" on public.admin_content
+for select using (auth.role() = 'authenticated');
+
+drop policy if exists "admin_content_insert_admin" on public.admin_content;
+create policy "admin_content_insert_admin" on public.admin_content
+for insert with check (public.is_admin());
+
+drop policy if exists "admin_content_update_admin" on public.admin_content;
+create policy "admin_content_update_admin" on public.admin_content
+for update using (public.is_admin()) with check (public.is_admin());
+
+drop policy if exists "admin_content_delete_admin" on public.admin_content;
+create policy "admin_content_delete_admin" on public.admin_content
+for delete using (public.is_admin());
+
+-- audit_logs policies: user can insert own events; admin can read all
+drop policy if exists "audit_select_admin" on public.audit_logs;
+create policy "audit_select_admin" on public.audit_logs
+for select using (public.is_admin());
+
+drop policy if exists "audit_insert_authenticated" on public.audit_logs;
+create policy "audit_insert_authenticated" on public.audit_logs
+for insert with check (auth.role() = 'authenticated');
+
+-- Seed admin_content
 insert into public.admin_content (type, title, body, publish_date, active)
 values
-('tips','Niat yang Konsisten','Mulai hari ini dengan niat yang jelas dan kecil tapi rutin.', current_date, true),
-('challenge','Tantangan 10 Menit','Luangkan 10 menit untuk tilawah dengan fokus dan tartil.', current_date, true),
-('announcement','Selamat Datang','Ramadhan Companion siap menemani ibadah Anda.', current_date, true)
+('tips','Niat & Konsistensi','Mulai dengan niat yang lurus, lalu jaga konsistensi walau sedikit.','2026-03-01',true),
+('challenge','Challenge 1: 10 menit tilawah','Sediakan 10 menit khusus tilawah hari ini.','2026-03-01',true),
+('announcement','Selamat Datang','Semoga Ramadhan ini lebih bermakna bersama Ramadhan Companion.','2026-03-01',true)
 on conflict do nothing;

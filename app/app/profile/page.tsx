@@ -25,7 +25,7 @@ export default function ProfilePage() {
         <div className="mt-4 rounded-3xl border border-border bg-white p-4">
           <div className="text-sm font-semibold text-text">Akun</div>
           <div className="mt-2 text-xs text-muted">
-            Avatar, nama panggilan, bio, target — akan ditambahkan pada iterasi berikutnya.
+            Avatar, nama panggilan, bio, target — bisa ditambah pada iterasi berikutnya.
           </div>
 
           <button
@@ -35,6 +35,10 @@ export default function ProfilePage() {
           >
             {loading ? "Keluar..." : "Keluar"}
           </button>
+
+          <a className="mt-3 block text-center text-xs text-muted underline underline-offset-4" href="/admin/overview">
+            Masuk Admin (jika role admin)
+          </a>
         </div>
       </main>
     </AuthGate>

@@ -4,6 +4,7 @@ import React from "react";
 import { supabase } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { MobileOnlyGuard } from "@/components/mobile-only-guard";
+import { ReactQueryProvider } from "@/components/react-query-provider";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -37,5 +38,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     );
   }
 
-  return <MobileOnlyGuard>{children}</MobileOnlyGuard>;
+  return (
+    <MobileOnlyGuard>
+      <ReactQueryProvider>{children}</ReactQueryProvider>
+    </MobileOnlyGuard>
+  );
 }

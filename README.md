@@ -1,32 +1,10 @@
-# Ramadhan Companion (Mobile-Only)
+# Ramadhan Companion (Realtime + eQuran API)
 
-Stack:
-- Next.js (App Router) + TypeScript + TailwindCSS
-- Supabase Auth & DB
-- React Query + Zod
-- Vercel friendly
+- Realtime Supabase (postgres_changes) untuk tilawah/hafalan/tracker/quran_progress/admin stats
+- Quran via eQuran API (https://equran.id/apidev/v2) melalui route handler Next.js (`/api/equran/*`) agar caching aman & konsisten
 
 ## Jalankan
-1) Install deps
-```bash
-npm i
-```
-
-2) Buat file `.env.local`
-```bash
-NEXT_PUBLIC_SUPABASE_URL=...
-NEXT_PUBLIC_SUPABASE_ANON_KEY=...
-```
-
-3) Run dev
-```bash
-npm run dev
-```
-
-## Mobile-only
-- App utama hanya untuk viewport <= 480px.
-- Untuk desktop akan diarahkan ke `/use-mobile`.
-
-## Supabase SQL + RLS
-Lihat `supabase/schema.sql` lalu jalankan di SQL Editor Supabase.
-
+1) `npm i`
+2) Buat `.env.local` dari `.env.example`
+3) Jalankan SQL: `supabase/schema.sql` di Supabase SQL Editor
+4) `npm run dev`

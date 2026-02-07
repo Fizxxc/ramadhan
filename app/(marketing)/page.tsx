@@ -3,17 +3,13 @@ export default function LandingPage() {
     <main className="min-h-dvh bg-white px-5 pt-12">
       <div className="mx-auto max-w-[430px]">
         <div className="inline-flex items-center gap-2 rounded-2xl border border-border bg-surface px-3 py-2">
-          <span className="text-xs font-semibold" style={{ color: "rgb(var(--green))" }}>
-            Ramadhan Companion
-          </span>
-          <span className="text-xs text-muted">Mobile-only</span>
+          <span className="text-xs font-semibold" style={{ color: "rgb(var(--green))" }}>Ramadhan Companion</span>
+          <span className="text-xs text-muted">Realtime • Mobile-only</span>
         </div>
 
-        <h1 className="mt-5 text-2xl font-semibold text-text">
-          Teman ibadah Ramadhan Anda
-        </h1>
+        <h1 className="mt-5 text-2xl font-semibold text-text">Teman ibadah Ramadhan Anda</h1>
         <p className="mt-2 text-sm text-muted">
-          Tilawah, hafalan, tracker ibadah, dan refleksi harian — dalam satu aplikasi yang nyaman di ponsel.
+          Tilawah, hafalan, tracker ibadah, refleksi harian, serta Al-Qur’an (Juz 1–30) via eQuran API.
         </p>
 
         <div className="mt-8 space-y-3">
@@ -33,7 +29,7 @@ export default function LandingPage() {
         </div>
 
         <p className="mt-10 text-xs text-muted">
-          Untuk layar besar, aplikasi akan menampilkan halaman khusus “Silakan akses via ponsel”.
+          Untuk layar besar, aplikasi menampilkan halaman “Silakan akses via ponsel”.
         </p>
       </div>
     </main>

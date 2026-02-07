@@ -24,7 +24,7 @@ export function BottomNav() {
                   href={it.href}
                   className={[
                     "mx-1 flex h-11 items-center justify-center rounded-2xl text-xs font-semibold transition active:scale-[0.98]",
-                    active ? "bg-surface text-text" : "text-muted"
+                    active ? "bg-surface text-text" : "text-muted",
                   ].join(" ")}
                   aria-current={active ? "page" : undefined}
                 >

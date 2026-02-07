@@ -1,11 +1,1 @@
-export default function AdminActivityPage() {
-  return (
-    <main className="px-5 pt-6">
-      <h1 className="text-lg font-semibold text-text">Admin • Activity</h1>
-      <p className="mt-1 text-sm text-muted">Filter log per tanggal (placeholder).</p>
-      <div className="mt-4 rounded-3xl border border-border bg-white p-4 text-sm text-muted">
-        Tabel aktivitas akan ditambahkan pada iterasi berikutnya.
-      </div>
-    </main>
-  );
-}
+export default function AdminActivityPage(){return (<main className='px-5 pt-6'><h1 className='text-lg font-semibold text-text'>Admin • Activity</h1><p className='mt-1 text-sm text-muted'>Filter log per tanggal (iterasi berikutnya).</p></main>);}

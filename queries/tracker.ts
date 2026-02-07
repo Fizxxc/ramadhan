@@ -1,31 +1,32 @@
 import { supabase } from "@/lib/supabase/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { TilawahLogInput } from "@/lib/zod/tilawah";
 import { subscribeTable } from "@/lib/supabase/realtime";
 import { useEffect } from "react";
 
-export function useTilawahLogs(date: string) {
+export type ChecklistItems = Record<string, boolean>;
+
+export function useWorshipChecklist(date: string) {
   return useQuery({
-    queryKey: ["tilawah_logs", date],
+    queryKey: ["worship_checklists", date],
     queryFn: async () => {
       const { data: sess } = await supabase.auth.getSession();
       const uid = sess.session?.user.id;
       if (!uid) throw new Error("Sesi tidak ditemukan");
 
       const { data, error } = await supabase
-        .from("tilawah_logs")
+        .from("worship_checklists")
         .select("*")
         .eq("user_id", uid)
         .eq("date", date)
-        .order("created_at", { ascending: false });
+        .maybeSingle();
 
       if (error) throw error;
-      return data ?? [];
+      return data ?? null;
     },
   });
 }
 
-export function useTilawahRealtime(date: string) {
+export function useTrackerRealtime(date: string) {
   const qc = useQueryClient();
   useEffect(() => {
     let unsub: null | (() => void) = null;
@@ -34,37 +35,31 @@ export function useTilawahRealtime(date: string) {
       const uid = sess.session?.user.id;
       if (!uid) return;
       unsub = subscribeTable({
-        channel: `rt-tilawah-${uid}`,
-        table: "tilawah_logs",
+        channel: `rt-tracker-${uid}`,
+        table: "worship_checklists",
         filter: `user_id=eq.${uid}`,
-        onChange: () => qc.invalidateQueries({ queryKey: ["tilawah_logs", date] }),
+        onChange: () => qc.invalidateQueries({ queryKey: ["worship_checklists", date] }),
       });
     })();
     return () => unsub?.();
   }, [date, qc]);
 }
 
-export function useCreateTilawahLog() {
+export function useUpsertWorshipChecklist() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (input: TilawahLogInput) => {
+    mutationFn: async (payload: { date: string; items: ChecklistItems; reflection?: string; mood?: number | null }) => {
       const { data: sess } = await supabase.auth.getSession();
       const uid = sess.session?.user.id;
       if (!uid) throw new Error("Sesi tidak ditemukan");
 
-      const { error } = await supabase.from("tilawah_logs").insert({
-        user_id: uid,
-        date: input.date,
-        surah: input.surah,
-        ayah_from: input.ayah_from,
-        ayah_to: input.ayah_to,
-        pages_count: input.pages_count,
-        notes: input.notes ?? null,
-      });
-
+      const { error } = await supabase.from("worship_checklists").upsert(
+        { user_id: uid, date: payload.date, items: payload.items, reflection: payload.reflection ?? null, mood: payload.mood ?? null },
+        { onConflict: "user_id,date" }
+      );
       if (error) throw error;
-      return true;
+      return payload.date;
     },
-    onSuccess: (_d, vars) => qc.invalidateQueries({ queryKey: ["tilawah_logs", vars.date] }),
+    onSuccess: (date) => qc.invalidateQueries({ queryKey: ["worship_checklists", date] }),
   });
 }

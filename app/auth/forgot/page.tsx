@@ -14,10 +14,7 @@ export default function ForgotPage() {
     setError("");
     setInfo("");
 
-    if (!email.includes("@")) {
-      setError("Email tidak valid");
-      return;
-    }
+    if (!email.includes("@")) return setError("Email tidak valid");
 
     setLoading(true);
     const { error: err } = await supabase.auth.resetPasswordForEmail(email, {
@@ -35,17 +32,8 @@ export default function ForgotPage() {
         <h1 className="text-xl font-semibold text-text">Lupa Kata Sandi</h1>
         <p className="mt-1 text-sm text-muted">Kami akan kirim tautan reset ke email Anda.</p>
 
-        {error ? (
-          <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-            {error}
-          </div>
-        ) : null}
-
-        {info ? (
-          <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
-            {info}
-          </div>
-        ) : null}
+        {error ? <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div> : null}
+        {info ? <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">{info}</div> : null}
 
         <form onSubmit={onSubmit} className="mt-6 space-y-4">
           <label className="block">
