@@ -4,45 +4,31 @@ import React from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
 
-export default function Loading() {
+export function RouteLoading({ subtitle = "Memuat..." }: { subtitle?: string }) {
   return (
     <main className="min-h-dvh bg-white flex items-center justify-center px-6">
       <div className="w-full max-w-[430px] flex items-center justify-center">
         <div className="relative flex items-center justify-center">
-          {/* Glow lembut */}
           <div className="pointer-events-none absolute -inset-16 rounded-full bg-emerald-500/10 blur-3xl" />
 
           <motion.div className="flex items-center gap-4" initial="start" animate="end">
-            {/* LOGO */}
             <motion.div
               className="relative"
               variants={{
                 start: { y: 80, opacity: 0, scale: 0.96 },
-                end: {
-                  y: 0,
-                  opacity: 1,
-                  scale: 1,
-                  transition: { duration: 0.6, ease: [0.2, 0.9, 0.2, 1] },
-                },
+                end: { y: 0, opacity: 1, scale: 1, transition: { duration: 0.6, ease: [0.2, 0.9, 0.2, 1] } },
               }}
             >
-              {/* bounce */}
               <motion.div
                 variants={{
                   start: {},
-                  end: {
-                    transition: { delay: 0.6, type: "spring", stiffness: 280, damping: 10, mass: 0.8 },
-                  },
+                  end: { transition: { delay: 0.6, type: "spring", stiffness: 280, damping: 10, mass: 0.8 } },
                 }}
               >
-                {/* geser kiri */}
                 <motion.div
                   variants={{
                     start: { x: 0 },
-                    end: {
-                      x: -72,
-                      transition: { delay: 1.25, duration: 0.5, ease: [0.2, 0.9, 0.2, 1] },
-                    },
+                    end: { x: -72, transition: { delay: 1.25, duration: 0.5, ease: [0.2, 0.9, 0.2, 1] } },
                   }}
                 >
                   <Image
@@ -57,7 +43,6 @@ export default function Loading() {
               </motion.div>
             </motion.div>
 
-            {/* TEKS */}
             <motion.div
               className="flex flex-col leading-none"
               initial={{ opacity: 0, x: 20, filter: "blur(6px)" }}
@@ -73,10 +58,11 @@ export default function Loading() {
                 animate={{ width: 120, opacity: 1 }}
                 transition={{ delay: 1.75, duration: 0.5, ease: "easeOut" }}
               />
+
+              <div className="mt-3 text-xs text-slate-500">{subtitle}</div>
             </motion.div>
           </motion.div>
 
-          {/* dots */}
           <div className="absolute -bottom-20 left-1/2 -translate-x-1/2 flex items-center gap-2">
             <Dot delay={0} />
             <Dot delay={0.15} />
